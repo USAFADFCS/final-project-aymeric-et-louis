@@ -74,6 +74,15 @@ def timeit(fn):
 def ensure_exists(path: str, kind: str = "fichier"):
     if not os.path.exists(path):
         raise FileNotFoundError(f"Le {kind} '{path}' est introuvable.")
+    
+# --- à ajouter près des autres utils ---
+def no_airplane_result():
+    return {
+        "contains_airplane": False,
+        "message": "Aucun avion détecté",
+        "results": []
+    }
+
 
 # =========================
 # Pré-traitements ResNet
@@ -272,6 +281,8 @@ def classify_topk(model_resnet,
     return results
 
 @timeit
+# --- remplacer votre analyser_image par ceci ---
+@timeit
 def analyser_image(image_path: str,
                    yolo_model,
                    resnet_model,
@@ -284,11 +295,12 @@ def analyser_image(image_path: str,
     ensure_exists(image_path, "image")
     img = Image.open(image_path).convert("RGB")
 
-    # 1) Détection
+    # 1) Détection (tous objets) puis filtrage avion
     detections = yolo_detect(yolo_model, image_path, conf, iou)
+    detections = filter_airplane_detections(detections)
 
     if len(detections) == 0:
-        return []
+        return no_airplane_result()
 
     # 2) Rognage + classification Top-k
     crops = [crop_image(img, det["bbox"]) for det in detections]
@@ -300,9 +312,16 @@ def analyser_image(image_path: str,
         outputs.append({
             "coordonnees": det["bbox"],
             "confiance_detection": det["score"],
-            "topk": topk_list  # liste de dicts: [{"label","prob","class_id"}, ...]
+            "label_yolo": det["label"],
+            "topk": topk_list
         })
-    return outputs
+
+    return {
+        "contains_airplane": True,
+        "message": "Avion détecté",
+        "results": outputs
+    }
+
 
 # =========================
 # Main
@@ -327,8 +346,16 @@ def main():
             classes = [f"class_{i}" for i in range(out_dim)]
             log(f"ℹ️ Aucune liste de classes fournie/trouvée, on utilise {out_dim} labels génériques.")
 
-        # Inference (avec Top-3)
-        results = analyser_image(
+        # --- dans main(), remplacer le bloc inference/affichage par ceci ---
+        # Étape 0) Garde‑fou: vérifie que l'image contient bien un avion
+        log("🔍 Vérification: l'image contient-elle un avion ?")
+        if not image_contains_airplane(yolo_model, IMAGE_PATH, conf=YOLO_CONF_THRES, iou=YOLO_IOU_THRES):
+            res = no_airplane_result()
+            log(f"🟡 {res['message']}")
+            return  # on sort proprement
+
+        # Inference (avec Top-3) — ici on est sûr qu'au moins une détection avion existe
+        res = analyser_image(
             IMAGE_PATH,
             yolo_model,
             resnet_model,
@@ -340,17 +367,19 @@ def main():
             topk=3
         )
 
-        if results:
-            log("\n📋 Résultats:")
-            for i, r in enumerate(results, 1):
-                x1, y1, x2, y2 = r["coordonnees"]
-                log(f"\n🛩️ Objet {i}:")
-                log(f"   Coordonnées: ({x1}, {y1}, {x2}, {y2})")
-                log(f"   Confiance YOLO: {r['confiance_detection']:.3f}")
-                for rank, cand in enumerate(r["topk"], 1):
-                    log(f"   #{rank} {cand['label']} — p={cand['prob']:.4f} (id={cand['class_id']})")
-        else:
-            log("⚠️ Aucun objet détecté par YOLO.")
+        if not res.get("contains_airplane", False) or len(res.get("results", [])) == 0:
+            log("🟡 Aucun avion détecté")
+            return
+
+        log("\n📋 Résultats:")
+        for i, r in enumerate(res["results"], 1):
+            x1, y1, x2, y2 = r["coordonnees"]
+            log(f"\n🛩️ Objet {i}:")
+            log(f"   Coordonnées: ({x1}, {y1}, {x2}, {y2})")
+            log(f"   Confiance YOLO: {r['confiance_detection']:.3f}")
+            for rank, cand in enumerate(r["topk"], 1):
+                log(f"   #{rank} {cand['label']} — p={cand['prob']:.4f} (id={cand['class_id']})")
+
 
     except Exception as e:
         # On tente d’être explicite sur les erreurs fréquentes
