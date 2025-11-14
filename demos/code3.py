@@ -455,7 +455,8 @@ def build_ui():
         with gr.Row():
             with gr.Column():
                 in_img = gr.Image(type="pil", label="Image", image_mode="RGB")
-                conf = gr.Slider(0.05, 0.9, value=YOLO_CONF_THRES, step=0.05, label="Seuil confiance YOLO")
+                conf = gr.Slider(0.05, 0.9, v
+                                 alue=YOLO_CONF_THRES, step=0.05, label="Seuil confiance YOLO")
                 iou = gr.Slider(0.1, 0.9, value=YOLO_IOU_THRES, step=0.05, label="Seuil IoU YOLO")
                 topk = gr.Slider(1, 5, value=3, step=1, label="Top‑k ResNet")
                 btn = gr.Button("Analyser")
