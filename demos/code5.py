@@ -227,8 +227,24 @@ def load_resnet_autodetect(model_path: str, classes: Optional[List[str]], device
     log(f"ℹ️ ResNet détecté: "
         f"{'Bottleneck' if model.layer1[0].expansion==4 else 'BasicBlock'} | "
         f"fc.in_features={model.fc.in_features} | classes={num_classes}")
+    if "fc.weight" in state_dict:
+        ckpt_classes = state_dict["fc.weight"].shape[0]
+        model_classes = model.fc.out_features
 
-    model.load_state_dict(state_dict, strict=True)
+        if ckpt_classes != model_classes:
+            print(f"⚠️ Ajustement du FC par tronquage : checkpoint={ckpt_classes} classes, "
+                f"model={model_classes} classes")
+
+        if ckpt_classes > model_classes:
+            # Tronquer
+            state_dict["fc.weight"] = state_dict["fc.weight"][:model_classes]
+            state_dict["fc.bias"]   = state_dict["fc.bias"][:model_classes]
+        else:
+            raise ValueError("Checkpoint a moins de classes que le modèle — cas non supporté.")
+# -----------------------------
+
+
+    model.load_state_dict(state_dict, strict=False)
     model.eval().to(device)
     return model, classes
 
