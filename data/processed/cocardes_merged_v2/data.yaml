@@ -1,0 +1,23 @@
+path: C:/Users/demeu/PycharmProjects/final-project-aymeric-et-louis/data/processed/cocardes_merged_v2
+
+train: images/train
+val: images/val
+test: images/test
+
+nc: 15
+names:
+  0: australia
+  1: china
+  2: france
+  3: india
+  4: japan
+  5: russia
+  6: south_korea
+  7: turkey
+  8: uk
+  9: ukraine
+  10: usa
+  11: germany
+  12: italy
+  13: egypt
+  14: israel
