@@ -28,7 +28,7 @@ except Exception as e:
 # Chemins (à adapter)
 MODEL_YOLO_PATH = "/Users/a.cariven/Documents/USAFA/comp scien/final-project-aymeric-et-louis-1/demos/yolov8n.pt"            # si vous avez un .pt ultralytics, mettez le .pt (ex: "yolov8n.pt")
 MODEL_RESNET_PATH = "/Users/a.cariven/Documents/USAFA/comp scien/final-project-aymeric-et-louis-1/demos/resnet_model_optimized.pth"
-IMAGE_PATH = "/Users/a.cariven/Documents/USAFA/comp scien/final-project-aymeric-et-louis-1/demos/inputs/a400m.jpeg"
+IMAGE_PATH = "/Users/a.cariven/Documents/USAFA/comp scien/final-project-aymeric-et-louis-1/demos/inputs/A400M.jpeg"
 
 # Optionnel: liste des classes (si vous avez un fichier JSON/texte)
 # Si None, on essaiera de la tirer du checkpoint (clé 'classes' si présente)
